@@ -1,1 +1,3 @@
-# cedro-streaming-socket
+# CedroStreamingSocket
+
+A description of this package.
