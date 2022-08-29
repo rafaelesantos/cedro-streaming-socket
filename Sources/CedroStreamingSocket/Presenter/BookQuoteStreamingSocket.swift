@@ -49,7 +49,11 @@ public final class BookQuoteStreamingSocket {
 // MARK: - BookQuoteDelegate
 extension BookQuoteStreamingSocket: BookQuoteDelegate {
     func bookQuoteOffersAdd(didReceived bookQuoteOffersAdd: BookQuoteOffersAdd) {
-        if let bookQuoteToPutIndex = bookQuote.firstIndex(where: { $0.position == bookQuoteOffersAdd.position }) {
+        if let bookQuoteToPutIndex = bookQuote.firstIndex(where: {
+            $0.asset == bookQuoteOffersAdd.asset &&
+            $0.position == bookQuoteOffersAdd.position &&
+            $0.direction == bookQuoteOffersAdd.direction
+        }) {
             bookQuote[bookQuoteToPutIndex] = bookQuoteOffersAdd
         } else {
             bookQuote.append(bookQuoteOffersAdd)
@@ -59,9 +63,9 @@ extension BookQuoteStreamingSocket: BookQuoteDelegate {
     
     func bookQuoteOffersUpdate(didReceived bookQuoteOffersUpdate: BookQuoteOffersUpdate) {
         if let bookQuoteToUpdateIndex = bookQuote.firstIndex(where: {
-            $0.orderId == bookQuoteOffersUpdate.orderId &&
+            $0.asset == bookQuoteOffersUpdate.asset &&
             $0.position == bookQuoteOffersUpdate.oldPosition &&
-            $0.asset == bookQuoteOffersUpdate.asset
+            $0.direction == bookQuoteOffersUpdate.direction
         }) {
             bookQuote[bookQuoteToUpdateIndex] = BookQuoteOffersAdd(
                 asset: bookQuoteOffersUpdate.asset,

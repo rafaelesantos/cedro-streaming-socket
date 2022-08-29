@@ -44,7 +44,11 @@ public final class AggregatedBookStreamingSocket {
 // MARK: - AggregatedBook
 extension AggregatedBookStreamingSocket: AggregatedBookDelegate {
     func aggregatedBookOffersAdd(didReceived aggregatedBookOffersAdd: AggregatedBookOffersAdd) {
-        if let aggregatedBookToPutIndex = aggregatedBook.firstIndex(where: { $0.position == aggregatedBookOffersAdd.position }) {
+        if let aggregatedBookToPutIndex = aggregatedBook.firstIndex(where: {
+            $0.asset == aggregatedBookOffersAdd.asset &&
+            $0.position == aggregatedBookOffersAdd.position &&
+            $0.direction == aggregatedBookOffersAdd.direction
+        }) {
             aggregatedBook[aggregatedBookToPutIndex] = aggregatedBookOffersAdd
         } else {
             aggregatedBook.append(aggregatedBookOffersAdd)
@@ -54,8 +58,9 @@ extension AggregatedBookStreamingSocket: AggregatedBookDelegate {
     
     func aggregatedBookOffersUpdate(didReceived aggregatedBookOffersUpdate: AggregatedBookOffersUpdate) {
         if let aggregatedBookToUpdateIndex = aggregatedBook.firstIndex(where: {
+            $0.asset == aggregatedBookOffersUpdate.asset &&
             $0.position == aggregatedBookOffersUpdate.position &&
-            $0.asset == aggregatedBookOffersUpdate.asset
+            $0.direction == aggregatedBookOffersUpdate.direction
         }) {
             aggregatedBook[aggregatedBookToUpdateIndex] = AggregatedBookOffersAdd(
                 asset: aggregatedBookOffersUpdate.asset,
