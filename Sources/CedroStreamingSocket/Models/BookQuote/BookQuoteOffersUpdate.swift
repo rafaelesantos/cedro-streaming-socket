@@ -1,6 +1,6 @@
 import Foundation
 
-public struct BookQuoteOffersUpdate {
+public struct BookQuoteOffersUpdate: ServiceModel {
     public var asset: String
     /// Nova posição da oferta no livro de ofertas
     public var newPosition: Int

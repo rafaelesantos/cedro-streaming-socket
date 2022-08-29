@@ -1,6 +1,6 @@
 import Foundation
 
-public struct BookQuoteOffersCancel {
+public struct BookQuoteOffersCancel: ServiceModel {
     public var asset: String
     /// Identifica o tipo de cancelamento de ofertas que deve ser feito.
     public var offerCancelType: OfferCancelType

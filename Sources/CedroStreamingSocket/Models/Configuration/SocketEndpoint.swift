@@ -5,7 +5,7 @@ public protocol SocketEndpointProtocol {
     var port: UInt16 { get set }
 }
 
-public struct SocketEndpoint: SocketEndpointProtocol {
+public struct SocketEndpoint: SocketEndpointProtocol, Codable {
     public var host: String
     public var port: UInt16
 }

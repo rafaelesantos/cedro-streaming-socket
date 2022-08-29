@@ -1,6 +1,6 @@
 import Foundation
 
-public struct BookQuoteEndOfInitialMessages {
+public struct BookQuoteEndOfInitialMessages: ServiceModel {
     public var asset: String
 }
 

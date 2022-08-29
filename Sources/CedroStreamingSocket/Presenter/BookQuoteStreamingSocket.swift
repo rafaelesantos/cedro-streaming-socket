@@ -1,10 +1,14 @@
 import Foundation
 
-public protocol BookQuoteDelegate {
+protocol BookQuoteDelegate {
     func bookQuoteOffersAdd(didReceived bookQuoteOffersAdd: BookQuoteOffersAdd)
     func bookQuoteOffersUpdate(didReceived bookQuoteOffersUpdate: BookQuoteOffersUpdate)
     func bookQuoteOffersCancel(didReceived bookQuoteOffersCancel: BookQuoteOffersCancel)
     func bookQuoteEndOfInitialMessages(didReceived bookQuoteEndOfInitialMessages: BookQuoteEndOfInitialMessages)
+}
+
+public protocol BookQuoteStreamingSocketDelegate {
+    func bookQuote(didReceived bookQuote: [BookQuoteOffersAdd], contentType: BookQuoteContentType)
 }
 
 public final class BookQuoteStreamingSocket {
@@ -12,26 +16,27 @@ public final class BookQuoteStreamingSocket {
     public private(set) var bookQuoteOffersUpdate = [BookQuoteOffersUpdate]()
     public private(set) var bookQuoteOffersCancel = [BookQuoteOffersCancel]()
     public private(set) var bookQuoteEndOfInitialMessages = [BookQuoteEndOfInitialMessages]()
-    public var onReceivedBookQuote: (BookQuoteContentType) -> Void
+    public private(set) var bookQuote = [BookQuoteOffersAdd]()
     private var cedroStreamingSocket: CedroStreamingSocket
+    private var delegate: BookQuoteStreamingSocketDelegate
     private var currentAsset: String
+    private let delegateQueue = DispatchQueue(label: "cedro.streaming.socket.bookquote.delegate", attributes: .concurrent)
+    private let socketQueue = DispatchQueue(label: "cedro.streaming.socket.bookquote.socket", attributes: .concurrent)
     
     public init(
         authentication: SocketAuthenticationProtocol,
         endpoint: SocketEndpointProtocol,
         asset: String,
-        onReceivedBookQuote: @escaping (BookQuoteContentType) -> Void,
-        delegateQueue: DispatchQueue = .main,
-        socketQueue: DispatchQueue = .global(qos: .background)
+        delegate: BookQuoteStreamingSocketDelegate
     ) throws {
-        self.onReceivedBookQuote = onReceivedBookQuote
         currentAsset = asset
+        self.delegate = delegate
         cedroStreamingSocket = CedroStreamingSocket(authentication: authentication, endpoint: endpoint)
         cedroStreamingSocket.bookQuoteDelegate = self
-        try newSubscribe(asset: asset, delegateQueue: delegateQueue, socketQueue: socketQueue)
+        try newSubscribe(asset: asset)
     }
     
-    public func newSubscribe(asset: String, delegateQueue: DispatchQueue, socketQueue: DispatchQueue) throws {
+    public func newSubscribe(asset: String) throws {
         unsubscribe()
         currentAsset = asset
         try cedroStreamingSocket.subscribeBookQuote(asset: asset, delegateQueue: delegateQueue, socketQueue: socketQueue)
@@ -53,23 +58,48 @@ public final class BookQuoteStreamingSocket {
 
 // MARK: - BookQuoteDelegate
 extension BookQuoteStreamingSocket: BookQuoteDelegate {
-    public func bookQuoteOffersAdd(didReceived bookQuoteOffersAdd: BookQuoteOffersAdd) {
+    func bookQuoteOffersAdd(didReceived bookQuoteOffersAdd: BookQuoteOffersAdd) {
         self.bookQuoteOffersAdd.append(bookQuoteOffersAdd)
-        onReceivedBookQuote(.offersAdd)
+        bookQuote.append(bookQuoteOffersAdd)
+        delegate.bookQuote(didReceived: bookQuote, contentType: .offersAdd)
     }
     
-    public func bookQuoteOffersUpdate(didReceived bookQuoteOffersUpdate: BookQuoteOffersUpdate) {
+    func bookQuoteOffersUpdate(didReceived bookQuoteOffersUpdate: BookQuoteOffersUpdate) {
         self.bookQuoteOffersUpdate.append(bookQuoteOffersUpdate)
-        onReceivedBookQuote(.offersUpdate)
+        if let bookQuoteToUpdateIndex = bookQuote.firstIndex(where: {
+            $0.orderId == bookQuoteOffersUpdate.orderId &&
+            $0.position == bookQuoteOffersUpdate.oldPosition &&
+            $0.asset == bookQuoteOffersUpdate.asset
+        }) {
+            bookQuote[bookQuoteToUpdateIndex] = BookQuoteOffersAdd(
+                asset: bookQuoteOffersUpdate.asset,
+                position: bookQuoteOffersUpdate.newPosition,
+                direction: bookQuoteOffersUpdate.direction,
+                price: bookQuoteOffersUpdate.price,
+                amount: bookQuoteOffersUpdate.amount,
+                broker: bookQuoteOffersUpdate.broker,
+                dateHour: bookQuoteOffersUpdate.dateHour,
+                orderId: bookQuoteOffersUpdate.orderId,
+                offerType: bookQuoteOffersUpdate.offerType
+            )
+        }
+        delegate.bookQuote(didReceived: bookQuote, contentType: .offersUpdate)
     }
     
-    public func bookQuoteOffersCancel(didReceived bookQuoteOffersCancel: BookQuoteOffersCancel) {
+    func bookQuoteOffersCancel(didReceived bookQuoteOffersCancel: BookQuoteOffersCancel) {
         self.bookQuoteOffersCancel.append(bookQuoteOffersCancel)
-        onReceivedBookQuote(.offersCancel)
+        if let bookQuoteToCancelIndex = bookQuote.firstIndex(where: {
+            $0.asset == bookQuoteOffersCancel.asset &&
+            $0.position == bookQuoteOffersCancel.position &&
+            $0.direction == bookQuoteOffersCancel.direction
+        }) {
+            bookQuote.remove(at: bookQuoteToCancelIndex)
+        }
+        delegate.bookQuote(didReceived: bookQuote, contentType: .offersCancel)
     }
     
-    public func bookQuoteEndOfInitialMessages(didReceived bookQuoteEndOfInitialMessages: BookQuoteEndOfInitialMessages) {
+    func bookQuoteEndOfInitialMessages(didReceived bookQuoteEndOfInitialMessages: BookQuoteEndOfInitialMessages) {
         self.bookQuoteEndOfInitialMessages.append(bookQuoteEndOfInitialMessages)
-        onReceivedBookQuote(.endOfInitialMessages)
+        delegate.bookQuote(didReceived: bookQuote, contentType: .endOfInitialMessages)
     }
 }

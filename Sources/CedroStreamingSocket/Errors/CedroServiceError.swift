@@ -3,6 +3,7 @@ import Foundation
 public enum CedroServiceError: Error {
     case invalidMessageFormat
     case wrongService
+    // MARK: - Book Quote
     case dontContainsAsset
     case invalidAsset
     case dontContainsContent
@@ -25,4 +26,14 @@ public enum CedroServiceError: Error {
     case invalidOldPosition
     case dontContainsOfferCancelType
     case invalidOfferCancelType
+    // MARK: - Player
+    case dontContainsMarketName
+    case invalidMarketName
+    case dontContainsBrokerCodeMarket
+    case invalidBrokerCodeMarket
+    case dontContainsBrokerName
+    case dontContainsBrokerCodeBank
+    case invalidBrokerCodeBank
+    case dontContainsMarketCode
+    case invalidMarketCode
 }

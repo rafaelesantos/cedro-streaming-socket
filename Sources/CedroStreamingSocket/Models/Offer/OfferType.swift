@@ -1,6 +1,6 @@
 import Foundation
 
-public enum OfferType: String {
+public enum OfferType: String, Codable {
     /// O tipo L indica oferta Limitada
     case limited = "L"
     /// O oferta ao preço de Abertura

@@ -1,6 +1,6 @@
 import Foundation
 
-public struct BookQuoteOffersAdd {
+public struct BookQuoteOffersAdd: ServiceModel {
     public var asset: String
     /// Posição da oferta no livro de ofertas
     public var position: Int
@@ -18,6 +18,21 @@ public struct BookQuoteOffersAdd {
     public var orderId: String?
     /// Identifica o tipo da oferta.
     public var offerType: OfferType?
+}
+
+// MARK: - Group By
+extension Array where Element == BookQuoteOffersAdd {
+    public var sell: Self {
+        return filter({ $0.direction == .sell })
+    }
+    
+    public var buy: Self {
+        return filter({ $0.direction == .buy })
+    }
+    
+    public var sortByPosition: Self {
+        return sorted(by: { $0.position < $1.position })
+    }
 }
 
 // MARK: - BookQuoteContentProtocol

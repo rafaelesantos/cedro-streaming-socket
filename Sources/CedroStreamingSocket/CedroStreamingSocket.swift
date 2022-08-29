@@ -10,6 +10,7 @@ final class CedroStreamingSocket: NSObject {
     private var endpoint: SocketEndpointProtocol
     
     var bookQuoteDelegate: BookQuoteDelegate?
+    var playerDelegate: PlayerDelegate?
     
     private var socket: GCDAsyncSocket?
     
@@ -54,6 +55,7 @@ extension CedroStreamingSocket: GCDAsyncSocketDelegate {
             if components.indices.contains(0), let serviceId = ServiceId(rawValue: components[0]) {
                 switch serviceId {
                 case .bookQuote: try? receivedBookQuote(didReceived: components)
+                case .player: try? receivedPlayer(didReceived: components)
                 }
             }
         }
@@ -64,7 +66,7 @@ extension CedroStreamingSocket: GCDAsyncSocketDelegate {
 
 // MARK: - Book Quote
 extension CedroStreamingSocket {
-    func subscribeBookQuote(asset: String, delegateQueue: DispatchQueue = .main, socketQueue: DispatchQueue = .global()) throws {
+    func subscribeBookQuote(asset: String, delegateQueue: DispatchQueue, socketQueue: DispatchQueue) throws {
         openConnection(delegateQueue: delegateQueue, socketQueue: socketQueue)
         let bookQuoteCommand = ServiceCommand.bookQuote(asset: asset)
         socket?.write(bookQuoteCommand.subscribe, withTimeout: -1, tag: bookQuoteCommand.tag)
@@ -88,5 +90,18 @@ extension CedroStreamingSocket {
         case .endOfInitialMessages:
             bookQuoteDelegate?.bookQuoteEndOfInitialMessages(didReceived: try BookQuoteEndOfInitialMessages.decode(from: components))
         }
+    }
+}
+
+// MARK: - Player
+extension CedroStreamingSocket {
+    func subscribePlayer(market: Market, delegateQueue: DispatchQueue, socketQueue: DispatchQueue) throws {
+        openConnection(delegateQueue: delegateQueue, socketQueue: socketQueue)
+        let playerCommand = ServiceCommand.player(market: market)
+        socket?.write(playerCommand.subscribe, withTimeout: -1, tag: playerCommand.tag)
+    }
+    
+    private func receivedPlayer(didReceived components: [String]) throws {
+        playerDelegate?.player(didReceived: try Player.decode(from: components))
     }
 }

@@ -1,6 +1,6 @@
 import Foundation
 
-public enum OfferCancelType: Int {
+public enum OfferCancelType: Int, Codable {
     /// O tipo 1 indica que somente a oferta da posição indicada deve ser cancelada.
     case indicatedPosition = 1
     /// O tipo 2 indica que todas as ofertas melhores do que a oferta indicada pela posição, inclusive ela, devem ser canceladas.
