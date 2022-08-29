@@ -9,7 +9,7 @@ public struct BookQuoteOffersAdd: ServiceModelProtocol {
     /// Preço da oferta
     public var price: Double
     /// Quantidade da oferta
-    public var amount: Int
+    public var amount: Double
     /// Código de identificação da corretora detentora da oferta
     public var broker: Int
     /// Data e hora da oferta
@@ -90,9 +90,9 @@ extension BookQuoteOffersAdd: ServiceProtocol {
         return price
     }
     
-    private static func decodeAmount(from components: [String]) throws -> Int {
+    private static func decodeAmount(from components: [String]) throws -> Double {
         guard components.indices.contains(6) else { throw CedroServiceError.dontContainsAmount }
-        guard let amount = components[6].intValue else { throw CedroServiceError.invalidAmount }
+        guard let amount = components[6].doubleValue else { throw CedroServiceError.invalidAmount }
         return amount
     }
     

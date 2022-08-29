@@ -20,7 +20,7 @@ final class CedroStreamingSocketTests: XCTestCase {
 //    }
     
     func testAggregatedBook() throws {
-        _ = try AggregatedBookStreamingSocket(cedroStreamingSocket, self, asset: "winv22")
+        _ = try AggregatedBookStreamingSocket(cedroStreamingSocket, self, asset: "bitcoin")
         wait(for: [expectation], timeout: 600)
     }
 }
