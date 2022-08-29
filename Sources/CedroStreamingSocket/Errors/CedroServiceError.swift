@@ -26,6 +26,8 @@ public enum CedroServiceError: Error {
     case invalidOldPosition
     case dontContainsOfferCancelType
     case invalidOfferCancelType
+    case dontContainsOfferNumbers
+    case invalidOfferNumbers
     // MARK: - Player
     case dontContainsMarketName
     case invalidMarketName

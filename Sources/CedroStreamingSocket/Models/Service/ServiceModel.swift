@@ -1,5 +1,3 @@
 import Foundation
 
-public protocol ServiceModel: Codable {
-    
-}
+public protocol ServiceModelProtocol: Codable { }

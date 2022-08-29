@@ -12,26 +12,19 @@ public protocol BookQuoteStreamingSocketDelegate {
 }
 
 public final class BookQuoteStreamingSocket {
-    public private(set) var bookQuoteOffersAdd = [BookQuoteOffersAdd]()
-    public private(set) var bookQuoteOffersUpdate = [BookQuoteOffersUpdate]()
-    public private(set) var bookQuoteOffersCancel = [BookQuoteOffersCancel]()
-    public private(set) var bookQuoteEndOfInitialMessages = [BookQuoteEndOfInitialMessages]()
     public private(set) var bookQuote = [BookQuoteOffersAdd]()
     private var cedroStreamingSocket: CedroStreamingSocket
     private var delegate: BookQuoteStreamingSocketDelegate
     private var currentAsset: String
-    private let delegateQueue = DispatchQueue(label: "cedro.streaming.socket.bookquote.delegate", attributes: .concurrent)
-    private let socketQueue = DispatchQueue(label: "cedro.streaming.socket.bookquote.socket", attributes: .concurrent)
     
     public init(
-        authentication: SocketAuthenticationProtocol,
-        endpoint: SocketEndpointProtocol,
-        asset: String,
-        delegate: BookQuoteStreamingSocketDelegate
+        _ cedroStreamingSocket: CedroStreamingSocket,
+        _ delegate: BookQuoteStreamingSocketDelegate,
+        asset: String
     ) throws {
         currentAsset = asset
         self.delegate = delegate
-        cedroStreamingSocket = CedroStreamingSocket(authentication: authentication, endpoint: endpoint)
+        self.cedroStreamingSocket = cedroStreamingSocket
         cedroStreamingSocket.bookQuoteDelegate = self
         try newSubscribe(asset: asset)
     }
@@ -39,15 +32,12 @@ public final class BookQuoteStreamingSocket {
     public func newSubscribe(asset: String) throws {
         unsubscribe()
         currentAsset = asset
-        try cedroStreamingSocket.subscribeBookQuote(asset: asset, delegateQueue: delegateQueue, socketQueue: socketQueue)
+        try cedroStreamingSocket.subscribeBookQuote(asset: asset)
     }
     
     public func unsubscribe() {
         cedroStreamingSocket.unsubscribeBookQuote(asset: currentAsset)
-        bookQuoteOffersAdd = []
-        bookQuoteOffersUpdate = []
-        bookQuoteOffersCancel = []
-        bookQuoteEndOfInitialMessages = []
+        bookQuote = []
     }
     
     public func closeConnection() {
@@ -59,13 +49,15 @@ public final class BookQuoteStreamingSocket {
 // MARK: - BookQuoteDelegate
 extension BookQuoteStreamingSocket: BookQuoteDelegate {
     func bookQuoteOffersAdd(didReceived bookQuoteOffersAdd: BookQuoteOffersAdd) {
-        self.bookQuoteOffersAdd.append(bookQuoteOffersAdd)
-        bookQuote.append(bookQuoteOffersAdd)
+        if let bookQuoteToPutIndex = bookQuote.firstIndex(where: { $0.position == bookQuoteOffersAdd.position }) {
+            bookQuote[bookQuoteToPutIndex] = bookQuoteOffersAdd
+        } else {
+            bookQuote.append(bookQuoteOffersAdd)
+        }
         delegate.bookQuote(didReceived: bookQuote, contentType: .offersAdd)
     }
     
     func bookQuoteOffersUpdate(didReceived bookQuoteOffersUpdate: BookQuoteOffersUpdate) {
-        self.bookQuoteOffersUpdate.append(bookQuoteOffersUpdate)
         if let bookQuoteToUpdateIndex = bookQuote.firstIndex(where: {
             $0.orderId == bookQuoteOffersUpdate.orderId &&
             $0.position == bookQuoteOffersUpdate.oldPosition &&
@@ -87,8 +79,9 @@ extension BookQuoteStreamingSocket: BookQuoteDelegate {
     }
     
     func bookQuoteOffersCancel(didReceived bookQuoteOffersCancel: BookQuoteOffersCancel) {
-        self.bookQuoteOffersCancel.append(bookQuoteOffersCancel)
-        if let bookQuoteToCancelIndex = bookQuote.firstIndex(where: {
+        if bookQuoteOffersCancel.offerCancelType == .allBuySell {
+            bookQuote = []
+        } else if let bookQuoteToCancelIndex = bookQuote.firstIndex(where: {
             $0.asset == bookQuoteOffersCancel.asset &&
             $0.position == bookQuoteOffersCancel.position &&
             $0.direction == bookQuoteOffersCancel.direction
@@ -99,7 +92,6 @@ extension BookQuoteStreamingSocket: BookQuoteDelegate {
     }
     
     func bookQuoteEndOfInitialMessages(didReceived bookQuoteEndOfInitialMessages: BookQuoteEndOfInitialMessages) {
-        self.bookQuoteEndOfInitialMessages.append(bookQuoteEndOfInitialMessages)
         delegate.bookQuote(didReceived: bookQuote, contentType: .endOfInitialMessages)
     }
 }

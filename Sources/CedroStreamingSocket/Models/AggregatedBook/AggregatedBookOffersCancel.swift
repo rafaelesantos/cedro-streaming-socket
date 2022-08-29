@@ -1,6 +1,6 @@
 import Foundation
 
-public struct BookQuoteOffersCancel: ServiceModelProtocol {
+public struct AggregatedBookOffersCancel: ServiceModelProtocol {
     public var asset: String
     /// Identifica o tipo de cancelamento de ofertas que deve ser feito.
     public var offerCancelType: OfferCancelType
@@ -11,18 +11,18 @@ public struct BookQuoteOffersCancel: ServiceModelProtocol {
 }
 
 // MARK: - ServiceContentProtocol
-extension BookQuoteOffersCancel: ServiceContentProtocol {
-    public typealias ServiceContentTypeProtocol = BookQuoteContentType
+extension AggregatedBookOffersCancel: ServiceContentProtocol {
+    public typealias ServiceContentTypeProtocol = AggregatedBookContentType
     public var contentType: ServiceContentTypeProtocol { return .offersCancel }
 }
 
 // MARK: - ServiceProtocol
-extension BookQuoteOffersCancel: ServiceProtocol {
-    public static var serviceId: ServiceId { return .bookQuote }
+extension AggregatedBookOffersCancel: ServiceProtocol {
+    public static var serviceId: ServiceId { return .aggregatedBook }
     
-    public static func decode(from components: [String]) throws -> BookQuoteOffersCancel {
+    public static func decode(from components: [String]) throws -> AggregatedBookOffersCancel {
         try decodeService(from: components)
-        return BookQuoteOffersCancel(
+        return AggregatedBookOffersCancel(
             asset: try decodeAsset(from: components),
             offerCancelType: try decodeOfferCancelType(from: components),
             direction: decodeDirection(from: components),

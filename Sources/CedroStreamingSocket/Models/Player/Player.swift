@@ -1,6 +1,6 @@
 import Foundation
 
-public struct Player: ServiceModel {
+public struct Player: ServiceModelProtocol {
     public var marketName: String
     public var brokerCodeMarket: Int
     public var brokerName: String

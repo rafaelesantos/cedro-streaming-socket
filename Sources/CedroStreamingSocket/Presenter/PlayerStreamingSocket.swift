@@ -2,10 +2,11 @@ import Foundation
 
 protocol PlayerDelegate {
     func player(didReceived player: Player)
+    func playerEndOfInitialMessages(didReceived playerEndOfInitialMessages: PlayerEndOfInitialMessages)
 }
 
 public protocol PlayerStreamingSocketDelegate {
-    func players(didReceived players: [Player])
+    func players(didReceived players: [Player], contentType: PlayerContentType)
 }
 
 public final class PlayerStreamingSocket {
@@ -13,25 +14,22 @@ public final class PlayerStreamingSocket {
     private var cedroStreamingSocket: CedroStreamingSocket
     private var delegate: PlayerStreamingSocketDelegate
     private var currentMarket: Market
-    private let delegateQueue = DispatchQueue(label: "cedro.streaming.socket.player.delegate", attributes: .concurrent)
-    private let socketQueue = DispatchQueue(label: "cedro.streaming.socket.player.socket", attributes: .concurrent)
     
     public init(
-        authentication: SocketAuthenticationProtocol,
-        endpoint: SocketEndpointProtocol,
-        market: Market,
-        delegate: PlayerStreamingSocketDelegate
+        _ cedroStreamingSocket: CedroStreamingSocket,
+        _ delegate: PlayerStreamingSocketDelegate,
+        market: Market
     ) throws {
         currentMarket = market
         self.delegate = delegate
-        cedroStreamingSocket = CedroStreamingSocket(authentication: authentication, endpoint: endpoint)
-        cedroStreamingSocket.playerDelegate = self
+        self.cedroStreamingSocket = cedroStreamingSocket
+        self.cedroStreamingSocket.playerDelegate = self
         try newSubscribe(market: currentMarket)
     }
     
     public func newSubscribe(market: Market) throws {
         currentMarket = market
-        try cedroStreamingSocket.subscribePlayer(market: market, delegateQueue: delegateQueue, socketQueue: socketQueue)
+        try cedroStreamingSocket.subscribePlayer(market: market)
     }
     
     public func unsubscribe() {
@@ -48,6 +46,10 @@ public final class PlayerStreamingSocket {
 extension PlayerStreamingSocket: PlayerDelegate {
     func player(didReceived player: Player) {
         players.append(player)
-        delegate.players(didReceived: players)
+        delegate.players(didReceived: players, contentType: .player)
+    }
+    
+    func playerEndOfInitialMessages(didReceived playerEndOfInitialMessages: PlayerEndOfInitialMessages) {
+        delegate.players(didReceived: players, contentType: .endOfInitialMessages)
     }
 }

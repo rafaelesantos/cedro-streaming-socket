@@ -1,6 +1,6 @@
 import Foundation
 
-public struct BookQuoteOffersUpdate: ServiceModel {
+public struct BookQuoteOffersUpdate: ServiceModelProtocol {
     public var asset: String
     /// Nova posição da oferta no livro de ofertas
     public var newPosition: Int
@@ -22,9 +22,10 @@ public struct BookQuoteOffersUpdate: ServiceModel {
     public var offerType: OfferType?
 }
 
-// MARK: - BookQuoteContentProtocol
-extension BookQuoteOffersUpdate: BookQuoteContentProtocol {
-    public static var contentType: BookQuoteContentType { return .offersUpdate }
+// MARK: - ServiceContentProtocol
+extension BookQuoteOffersUpdate: ServiceContentProtocol {
+    public typealias ServiceContentTypeProtocol = BookQuoteContentType
+    public var contentType: ServiceContentTypeProtocol { return .offersUpdate }
 }
     
 // MARK: - ServiceProtocol

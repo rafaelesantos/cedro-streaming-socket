@@ -1,6 +1,6 @@
 import Foundation
 
 public enum Market: String, Codable {
-    case bmf = "bmf"
-    case bovespa = "bovespa"
+    case bmf = "BMF"
+    case bovespa = "BOVESPA"
 }

@@ -1,22 +1,22 @@
 import Foundation
 
-public struct BookQuoteEndOfInitialMessages: ServiceModelProtocol {
+public struct AggregatedBookEndOfInitialMessages: ServiceModelProtocol {
     public var asset: String
 }
 
 // MARK: - ServiceContentProtocol
-extension BookQuoteEndOfInitialMessages: ServiceContentProtocol {
-    public typealias ServiceContentTypeProtocol = BookQuoteContentType
+extension AggregatedBookEndOfInitialMessages: ServiceContentProtocol {
+    public typealias ServiceContentTypeProtocol = AggregatedBookContentType
     public var contentType: ServiceContentTypeProtocol { return .endOfInitialMessages }
 }
 
 // MARK: - ServiceProtocol
-extension BookQuoteEndOfInitialMessages: ServiceProtocol {
-    public static var serviceId: ServiceId { return .bookQuote }
+extension AggregatedBookEndOfInitialMessages: ServiceProtocol {
+    public static var serviceId: ServiceId { return .aggregatedBook }
     
-    public static func decode(from components: [String]) throws -> BookQuoteEndOfInitialMessages {
+    public static func decode(from components: [String]) throws -> AggregatedBookEndOfInitialMessages {
         try decodeService(from: components)
-        return BookQuoteEndOfInitialMessages(asset: try decodeAsset(from: components))
+        return AggregatedBookEndOfInitialMessages(asset: try decodeAsset(from: components))
     }
     
     private static func decodeService(from components: [String]) throws {
