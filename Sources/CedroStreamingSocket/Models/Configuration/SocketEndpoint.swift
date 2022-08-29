@@ -8,4 +8,9 @@ public protocol SocketEndpointProtocol {
 public struct SocketEndpoint: SocketEndpointProtocol, Codable {
     public var host: String
     public var port: UInt16
+    
+    public init(host: String, port: UInt16) {
+        self.host = host
+        self.port = port
+    }
 }
