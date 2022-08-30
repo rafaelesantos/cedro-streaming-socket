@@ -52,7 +52,8 @@ extension BookQuoteStreamingSocket: BookQuoteDelegate {
         if let bookQuoteToPutIndex = bookQuote.firstIndex(where: {
             $0.asset == bookQuoteOffersAdd.asset &&
             $0.position == bookQuoteOffersAdd.position &&
-            $0.direction == bookQuoteOffersAdd.direction
+            $0.direction == bookQuoteOffersAdd.direction &&
+            $0.broker == bookQuoteOffersAdd.broker
         }) {
             bookQuote[bookQuoteToPutIndex] = bookQuoteOffersAdd
         } else {
