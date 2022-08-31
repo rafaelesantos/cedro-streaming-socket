@@ -80,8 +80,8 @@ extension CedroStreamingSocket: GCDAsyncSocketDelegate {
                 }
             }
         }
-        
-        return sock.readData(withTimeout: -1, tag: 0)
+        let length = 1024 * 1024 * 1024
+        return sock.readData(withTimeout: 10, buffer: NSMutableData(length: length), bufferOffset: UInt(length), maxLength: UInt(length), tag: tag)
     }
 }
 
