@@ -1,8 +1,5 @@
 import Foundation
 
-public typealias AggregatedBookOffers = (buy: AggregatedBookOffersAdd?, sell: AggregatedBookOffersAdd?)
-public typealias AggregatedBook = [AggregatedBookOffers]
-
 protocol AggregatedBookDelegate {
     func aggregatedBookOffersAdd(didReceived aggregatedBookOffersAdd: AggregatedBookOffersAdd)
     func aggregatedBookOffersUpdate(didReceived aggregatedBookOffersUpdate: AggregatedBookOffersUpdate)
@@ -21,7 +18,7 @@ public final class AggregatedBookStreamingSocket {
     private var currentAsset: String
     
     public var aggregatedBook: AggregatedBook {
-        return Array(_aggregatedBook.values).sorted(by: { sortValidation(prev: sortValidationPosition(at: $0), next: sortValidationPosition(at: $1)) })
+        return Array(_aggregatedBook.values).sortedByPosition
     }
     
     public init(
@@ -86,17 +83,5 @@ extension AggregatedBookStreamingSocket: AggregatedBookDelegate {
     
     func aggregatedBookEndOfInitialMessages(didReceived aggregatedBookEndOfInitialMessages: AggregatedBookEndOfInitialMessages) {
         delegate.aggregatedBook(didReceived: Array(_aggregatedBook.values), contentType: .endOfInitialMessages)
-    }
-    
-    private func sortValidationPosition(at value: AggregatedBookOffers) -> Int? {
-        if value.buy == nil {
-            if value.sell == nil { return nil }
-            else { return value.sell?.position }
-        } else { return value.buy?.position }
-    }
-    
-    private func sortValidation(prev: Int?, next: Int?) -> Bool {
-        guard let prev = prev, let next = next else { return false }
-        return prev < next
     }
 }
