@@ -33,10 +33,6 @@ public final class AggregatedBookStreamingSocket {
         self.delegate = delegate
         self.cedroStreamingSocket = cedroStreamingSocket
         self.cedroStreamingSocket.aggregatedBookDelegate = self
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
-            guard let self = self else { return }
-            try? self.newSubscribe(asset: self.currentAsset)
-        }
     }
     
     public func newSubscribe(asset: String) throws {
