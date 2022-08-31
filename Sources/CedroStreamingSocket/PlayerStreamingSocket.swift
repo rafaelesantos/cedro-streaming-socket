@@ -1,6 +1,6 @@
 import Foundation
 
-protocol PlayerDelegate {
+protocol PlayerDelegate: AnyObject {
     func player(didReceived player: Player)
     func playerEndOfInitialMessages(didReceived playerEndOfInitialMessages: PlayerEndOfInitialMessages)
 }

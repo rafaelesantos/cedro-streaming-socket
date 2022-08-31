@@ -1,6 +1,6 @@
 import Foundation
 
-protocol BookQuoteDelegate {
+protocol BookQuoteDelegate: AnyObject {
     func bookQuoteOffersAdd(didReceived bookQuoteOffersAdd: BookQuoteOffersAdd)
     func bookQuoteOffersUpdate(didReceived bookQuoteOffersUpdate: BookQuoteOffersUpdate)
     func bookQuoteOffersCancel(didReceived bookQuoteOffersCancel: BookQuoteOffersCancel)

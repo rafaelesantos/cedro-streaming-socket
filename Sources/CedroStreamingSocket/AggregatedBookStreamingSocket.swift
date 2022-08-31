@@ -1,21 +1,22 @@
 import Foundation
 
-protocol AggregatedBookDelegate {
+protocol AggregatedBookDelegate: AnyObject {
     func aggregatedBookOffersAdd(didReceived aggregatedBookOffersAdd: AggregatedBookOffersAdd)
     func aggregatedBookOffersUpdate(didReceived aggregatedBookOffersUpdate: AggregatedBookOffersUpdate)
     func aggregatedBookOffersCancel(didReceived aggregatedBookOffersCancel: AggregatedBookOffersCancel)
     func aggregatedBookEndOfInitialMessages(didReceived aggregatedBookEndOfInitialMessages: AggregatedBookEndOfInitialMessages)
 }
 
-public protocol AggregatedBookStreamingSocketDelegate {
+public protocol AggregatedBookStreamingSocketDelegate: AnyObject {
     func aggregatedBook(didReceived aggregatedBook: AggregatedBook, contentType: AggregatedBookContentType)
 }
 
 public final class AggregatedBookStreamingSocket {
     private var _aggregatedBook = [String: AggregatedBookOffer]()
     private var cedroStreamingSocket: CedroStreamingSocket
-    private var delegate: AggregatedBookStreamingSocketDelegate
     private var currentAsset: String
+    
+    private weak var delegate: AggregatedBookStreamingSocketDelegate?
     
     public var aggregatedBook: AggregatedBook {
         return Array(_aggregatedBook.values).sortedByPosition
@@ -54,7 +55,7 @@ extension AggregatedBookStreamingSocket: AggregatedBookDelegate {
         } else if aggregatedBookOffersAdd.direction == .sell {
             _aggregatedBook[index] = AggregatedBookOffer(buy: _aggregatedBook[index]?.buy, sell: aggregatedBookOffersAdd)
         }
-        delegate.aggregatedBook(didReceived: Array(_aggregatedBook.values), contentType: .offersAdd)
+        delegate?.aggregatedBook(didReceived: Array(_aggregatedBook.values), contentType: .offersAdd)
     }
     
     func aggregatedBookOffersUpdate(didReceived aggregatedBookOffersUpdate: AggregatedBookOffersUpdate) {
@@ -64,7 +65,7 @@ extension AggregatedBookStreamingSocket: AggregatedBookDelegate {
         } else if aggregatedBookOffersUpdate.direction == .sell {
             _aggregatedBook[index] = AggregatedBookOffer(buy: _aggregatedBook[index]?.buy, sell: AggregatedBookOffersAdd(aggregatedBookOffersUpdate: aggregatedBookOffersUpdate))
         }
-        delegate.aggregatedBook(didReceived: Array(_aggregatedBook.values), contentType: .offersUpdate)
+        delegate?.aggregatedBook(didReceived: Array(_aggregatedBook.values), contentType: .offersUpdate)
     }
     
     func aggregatedBookOffersCancel(didReceived aggregatedBookOffersCancel: AggregatedBookOffersCancel) {
@@ -78,10 +79,10 @@ extension AggregatedBookStreamingSocket: AggregatedBookDelegate {
                 _aggregatedBook[index]?.sell = nil
             }
         }
-        delegate.aggregatedBook(didReceived: Array(_aggregatedBook.values), contentType: .offersCancel)
+        delegate?.aggregatedBook(didReceived: Array(_aggregatedBook.values), contentType: .offersCancel)
     }
     
     func aggregatedBookEndOfInitialMessages(didReceived aggregatedBookEndOfInitialMessages: AggregatedBookEndOfInitialMessages) {
-        delegate.aggregatedBook(didReceived: Array(_aggregatedBook.values), contentType: .endOfInitialMessages)
+        delegate?.aggregatedBook(didReceived: Array(_aggregatedBook.values), contentType: .endOfInitialMessages)
     }
 }
