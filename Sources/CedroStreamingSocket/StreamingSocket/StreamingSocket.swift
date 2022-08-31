@@ -6,6 +6,7 @@ final class StreamingSocket: NSObject {
     private var inputStream: InputStream!
     private var outputStream: OutputStream!
     public var isOpen: Bool = false
+    public var didOpen: (() -> Void)?
     
     weak var delegate: StreamingSocketDelegate?
     
@@ -71,7 +72,7 @@ extension StreamingSocket: StreamDelegate {
             print("has space available")
         case .openCompleted:
             isOpen = true
-            delegate?.didConnected()
+            didOpen?()
             print("[INFO] at \(Date())\nConnected to server on \(endpoint.host) : \(endpoint.port)")
         default:
             print("StreamDelegate event")

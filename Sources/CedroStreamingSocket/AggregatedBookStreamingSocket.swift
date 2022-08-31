@@ -33,6 +33,7 @@ public final class AggregatedBookStreamingSocket {
         self.delegate = delegate
         self.cedroStreamingSocket = cedroStreamingSocket
         self.cedroStreamingSocket.aggregatedBookDelegate = self
+        try newSubscribe(asset: currentAsset)
     }
     
     public func newSubscribe(asset: String) throws {
