@@ -37,6 +37,7 @@ public final class AggregatedBookStreamingSocket {
             guard let self = self else { return }
             try? self.newSubscribe(asset: self.currentAsset)
         }
+        self.cedroStreamingSocket.checkConnectionIsOpen()
     }
     
     public func newSubscribe(asset: String) throws {
