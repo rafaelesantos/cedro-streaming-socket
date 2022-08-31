@@ -43,7 +43,7 @@ extension CedroStreamingSocketTests: PlayerStreamingSocketDelegate {
 }
 
 extension CedroStreamingSocketTests: AggregatedBookStreamingSocketDelegate {
-    func aggregatedBook(didReceived aggregatedBook: [(buy: AggregatedBookOffersAdd?, sell: AggregatedBookOffersAdd?)], contentType: AggregatedBookContentType) {
+    func aggregatedBook(didReceived aggregatedBook: AggregatedBook, contentType: AggregatedBookContentType) {
         print("\n[INFO] [Aggregated Book Quote] at \(Date())\n*\tAggregated Book Content Type: \(contentType)\n*\tCount Aggregated Book Items: \(aggregatedBook.count)\n")
     }
 }

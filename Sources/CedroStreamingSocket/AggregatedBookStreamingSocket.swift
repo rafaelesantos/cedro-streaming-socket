@@ -1,5 +1,8 @@
 import Foundation
 
+public typealias AggregatedBookOffers = (buy: AggregatedBookOffersAdd?, sell: AggregatedBookOffersAdd?)
+public typealias AggregatedBook = [AggregatedBookOffers]
+
 protocol AggregatedBookDelegate {
     func aggregatedBookOffersAdd(didReceived aggregatedBookOffersAdd: AggregatedBookOffersAdd)
     func aggregatedBookOffersUpdate(didReceived aggregatedBookOffersUpdate: AggregatedBookOffersUpdate)
@@ -8,16 +11,16 @@ protocol AggregatedBookDelegate {
 }
 
 public protocol AggregatedBookStreamingSocketDelegate {
-    func aggregatedBook(didReceived aggregatedBook: [(buy: AggregatedBookOffersAdd?, sell: AggregatedBookOffersAdd?)], contentType: AggregatedBookContentType)
+    func aggregatedBook(didReceived aggregatedBook: AggregatedBook, contentType: AggregatedBookContentType)
 }
 
 public final class AggregatedBookStreamingSocket {
-    private var _aggregatedBook = [String: (buy: AggregatedBookOffersAdd?, sell: AggregatedBookOffersAdd?)]()
+    private var _aggregatedBook = [String: AggregatedBookOffers]()
     private var cedroStreamingSocket: CedroStreamingSocket
     private var delegate: AggregatedBookStreamingSocketDelegate
     private var currentAsset: String
     
-    public var aggregatedBook: [(buy: AggregatedBookOffersAdd?, sell: AggregatedBookOffersAdd?)] {
+    public var aggregatedBook: AggregatedBook {
         return Array(_aggregatedBook.values).sorted(by: { sortValidation(prev: sortValidationPosition(at: $0), next: sortValidationPosition(at: $1)) })
     }
     
@@ -85,7 +88,7 @@ extension AggregatedBookStreamingSocket: AggregatedBookDelegate {
         delegate.aggregatedBook(didReceived: Array(_aggregatedBook.values), contentType: .endOfInitialMessages)
     }
     
-    private func sortValidationPosition(at value: (buy: AggregatedBookOffersAdd?, sell: AggregatedBookOffersAdd?)) -> Int? {
+    private func sortValidationPosition(at value: AggregatedBookOffers) -> Int? {
         if value.buy == nil {
             if value.sell == nil { return nil }
             else { return value.sell?.position }
