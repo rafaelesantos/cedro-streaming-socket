@@ -33,14 +33,9 @@ public final class AggregatedBookStreamingSocket {
         self.delegate = delegate
         self.cedroStreamingSocket = cedroStreamingSocket
         self.cedroStreamingSocket.aggregatedBookDelegate = self
-        var isConnected = false
-        self.cedroStreamingSocket.onConnected = { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
             guard let self = self else { return }
-            isConnected = true
             try? self.newSubscribe(asset: self.currentAsset)
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
-            if !isConnected { self?.cedroStreamingSocket.checkConnectionIsOpen() }
         }
     }
     
