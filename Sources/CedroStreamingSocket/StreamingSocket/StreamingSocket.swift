@@ -71,6 +71,7 @@ extension StreamingSocket: StreamDelegate {
             print("has space available")
         case .openCompleted:
             isOpen = true
+            delegate?.didConnected()
             print("[INFO] at \(Date())\nConnected to server on \(endpoint.host) : \(endpoint.port)")
         default:
             print("StreamDelegate event")

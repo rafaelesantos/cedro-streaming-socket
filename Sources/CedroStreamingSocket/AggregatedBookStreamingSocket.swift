@@ -15,6 +15,8 @@ public final class AggregatedBookStreamingSocket {
     private var _aggregatedBook = [String: AggregatedBookOffer]()
     private var cedroStreamingSocket: CedroStreamingSocket
     private var currentAsset: String
+    private var delegateQueue = DispatchQueue(label: "cedro.streaming.socket.aggregatedbook.delegate", qos: .userInteractive, attributes: .concurrent)
+    private var socketQueue = DispatchQueue(label: "cedro.streaming.socket.aggregatedbook.socket", qos: .userInitiated, attributes: .concurrent)
     
     private weak var delegate: AggregatedBookStreamingSocketDelegate?
     
@@ -30,21 +32,34 @@ public final class AggregatedBookStreamingSocket {
         currentAsset = asset
         self.delegate = delegate
         self.cedroStreamingSocket = cedroStreamingSocket
-        cedroStreamingSocket.aggregatedBookDelegate = self
-        DispatchQueue.main.asyncAfter(deadline: .now()) { [weak self] in
-            try? self?.newSubscribe(asset: asset)
+        self.cedroStreamingSocket.aggregatedBookDelegate = self
+        self.cedroStreamingSocket.onConnected = { [weak self] in
+            guard let self = self else { return }
+            try? self.newSubscribe(asset: self.currentAsset)
         }
     }
     
     public func newSubscribe(asset: String) throws {
-        unsubscribe()
-        currentAsset = asset
-        try cedroStreamingSocket.subscribeAggregatedBook(asset: asset)
+        socketQueue.async { [weak self] in
+            guard let self = self else { return }
+            self.unsubscribe()
+            self.currentAsset = asset
+            try? self.cedroStreamingSocket.subscribeAggregatedBook(asset: asset)
+        }
     }
     
     public func unsubscribe() {
-        cedroStreamingSocket.unsubscribeAggregatedBook(asset: currentAsset)
-        _aggregatedBook = [:]
+        socketQueue.async { [weak self] in
+            guard let self = self else { return }
+            self.cedroStreamingSocket.unsubscribeAggregatedBook(asset: self.currentAsset)
+            self._aggregatedBook = [:]
+        }
+    }
+    
+    private func delegateProxy(didReceived aggregatedBook: AggregatedBook, contentType: AggregatedBookContentType) {
+        delegateQueue.async { [weak self] in
+            self?.delegate?.aggregatedBook(didReceived: aggregatedBook, contentType: contentType)
+        }
     }
 }
 
@@ -57,7 +72,7 @@ extension AggregatedBookStreamingSocket: AggregatedBookDelegate {
         } else if aggregatedBookOffersAdd.direction == .sell {
             _aggregatedBook[index] = AggregatedBookOffer(buy: _aggregatedBook[index]?.buy, sell: aggregatedBookOffersAdd)
         }
-        delegate?.aggregatedBook(didReceived: Array(_aggregatedBook.values), contentType: .offersAdd)
+        delegateProxy(didReceived: Array(_aggregatedBook.values), contentType: .offersAdd)
     }
     
     func aggregatedBookOffersUpdate(didReceived aggregatedBookOffersUpdate: AggregatedBookOffersUpdate) {
@@ -67,7 +82,7 @@ extension AggregatedBookStreamingSocket: AggregatedBookDelegate {
         } else if aggregatedBookOffersUpdate.direction == .sell {
             _aggregatedBook[index] = AggregatedBookOffer(buy: _aggregatedBook[index]?.buy, sell: AggregatedBookOffersAdd(aggregatedBookOffersUpdate: aggregatedBookOffersUpdate))
         }
-        delegate?.aggregatedBook(didReceived: Array(_aggregatedBook.values), contentType: .offersUpdate)
+        delegateProxy(didReceived: Array(_aggregatedBook.values), contentType: .offersUpdate)
     }
     
     func aggregatedBookOffersCancel(didReceived aggregatedBookOffersCancel: AggregatedBookOffersCancel) {
@@ -81,10 +96,10 @@ extension AggregatedBookStreamingSocket: AggregatedBookDelegate {
                 _aggregatedBook[index]?.sell = nil
             }
         }
-        delegate?.aggregatedBook(didReceived: Array(_aggregatedBook.values), contentType: .offersCancel)
+        delegateProxy(didReceived: Array(_aggregatedBook.values), contentType: .offersCancel)
     }
     
     func aggregatedBookEndOfInitialMessages(didReceived aggregatedBookEndOfInitialMessages: AggregatedBookEndOfInitialMessages) {
-        delegate?.aggregatedBook(didReceived: Array(_aggregatedBook.values), contentType: .endOfInitialMessages)
+        delegateProxy(didReceived: Array(_aggregatedBook.values), contentType: .endOfInitialMessages)
     }
 }
