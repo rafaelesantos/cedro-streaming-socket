@@ -20,7 +20,7 @@ final class CedroStreamingSocketTests: XCTestCase {
 //    }
     
     func testAggregatedBook() throws {
-        let aggregatedBook = try AggregatedBookStreamingSocket(self.cedroStreamingSocket, self, asset: "winv22")
+        let aggregatedBook = try AggregatedBookStreamingSocket(self.cedroStreamingSocket, self, asset: "petr4")
         DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
             aggregatedBook.aggregatedBook.forEach({ print($0) })
         }
@@ -43,7 +43,7 @@ extension CedroStreamingSocketTests: PlayerStreamingSocketDelegate {
 }
 
 extension CedroStreamingSocketTests: AggregatedBookStreamingSocketDelegate {
-    public func aggregatedBook(didReceived aggregatedBook: [AggregatedBookOffersAdd], contentType: AggregatedBookContentType) {
+    func aggregatedBook(didReceived aggregatedBook: [(buy: AggregatedBookOffersAdd?, sell: AggregatedBookOffersAdd?)], contentType: AggregatedBookContentType) {
         print("\n[INFO] [Aggregated Book Quote] at \(Date())\n*\tAggregated Book Content Type: \(contentType)\n*\tCount Aggregated Book Items: \(aggregatedBook.count)\n")
     }
 }

@@ -8,14 +8,18 @@ protocol AggregatedBookDelegate {
 }
 
 public protocol AggregatedBookStreamingSocketDelegate {
-    func aggregatedBook(didReceived aggregatedBook: [AggregatedBookOffersAdd], contentType: AggregatedBookContentType)
+    func aggregatedBook(didReceived aggregatedBook: [(buy: AggregatedBookOffersAdd?, sell: AggregatedBookOffersAdd?)], contentType: AggregatedBookContentType)
 }
 
 public final class AggregatedBookStreamingSocket {
-    public private(set) var aggregatedBook = [AggregatedBookOffersAdd]()
+    private var _aggregatedBook = [String: (buy: AggregatedBookOffersAdd?, sell: AggregatedBookOffersAdd?)]()
     private var cedroStreamingSocket: CedroStreamingSocket
     private var delegate: AggregatedBookStreamingSocketDelegate
     private var currentAsset: String
+    
+    public var aggregatedBook: [(buy: AggregatedBookOffersAdd?, sell: AggregatedBookOffersAdd?)] {
+        return Array(_aggregatedBook.values).sorted(by: { sortValidation(prev: sortValidationPosition(at: $0), next: sortValidationPosition(at: $1)) })
+    }
     
     public init(
         _ cedroStreamingSocket: CedroStreamingSocket,
@@ -37,58 +41,59 @@ public final class AggregatedBookStreamingSocket {
     
     public func unsubscribe() {
         cedroStreamingSocket.unsubscribeAggregatedBook(asset: currentAsset)
-        aggregatedBook = []
+        _aggregatedBook = [:]
     }
 }
 
 // MARK: - AggregatedBook
 extension AggregatedBookStreamingSocket: AggregatedBookDelegate {
     func aggregatedBookOffersAdd(didReceived aggregatedBookOffersAdd: AggregatedBookOffersAdd) {
-        if let aggregatedBookToPutIndex = aggregatedBook.firstIndex(where: {
-            $0.asset == aggregatedBookOffersAdd.asset &&
-            $0.position == aggregatedBookOffersAdd.position &&
-            $0.direction == aggregatedBookOffersAdd.direction
-        }) {
-            aggregatedBook[aggregatedBookToPutIndex] = aggregatedBookOffersAdd
-        } else {
-            aggregatedBook.append(aggregatedBookOffersAdd)
+        let index = "\(aggregatedBookOffersAdd.asset).\(aggregatedBookOffersAdd.position)"
+        if aggregatedBookOffersAdd.direction == .buy {
+            _aggregatedBook[index] = (buy: aggregatedBookOffersAdd, sell: _aggregatedBook[index]?.sell)
+        } else if aggregatedBookOffersAdd.direction == .sell {
+            _aggregatedBook[index] = (buy: _aggregatedBook[index]?.buy, sell: aggregatedBookOffersAdd)
         }
-        delegate.aggregatedBook(didReceived: aggregatedBook, contentType: .offersAdd)
+        delegate.aggregatedBook(didReceived: Array(_aggregatedBook.values), contentType: .offersAdd)
     }
     
     func aggregatedBookOffersUpdate(didReceived aggregatedBookOffersUpdate: AggregatedBookOffersUpdate) {
-        if let aggregatedBookToUpdateIndex = aggregatedBook.firstIndex(where: {
-            $0.asset == aggregatedBookOffersUpdate.asset &&
-            $0.position == aggregatedBookOffersUpdate.position &&
-            $0.direction == aggregatedBookOffersUpdate.direction
-        }) {
-            aggregatedBook[aggregatedBookToUpdateIndex] = AggregatedBookOffersAdd(
-                asset: aggregatedBookOffersUpdate.asset,
-                position: aggregatedBookOffersUpdate.position,
-                direction: aggregatedBookOffersUpdate.direction,
-                price: aggregatedBookOffersUpdate.price,
-                amount: aggregatedBookOffersUpdate.amount,
-                offerNumbers: aggregatedBookOffersUpdate.offerNumbers,
-                dateHour: aggregatedBookOffersUpdate.dateHour
-            )
+        let index = "\(aggregatedBookOffersUpdate.asset).\(aggregatedBookOffersUpdate.position)"
+        if aggregatedBookOffersUpdate.direction == .buy {
+            _aggregatedBook[index] = (buy: AggregatedBookOffersAdd(aggregatedBookOffersUpdate: aggregatedBookOffersUpdate), sell: _aggregatedBook[index]?.sell)
+        } else if aggregatedBookOffersUpdate.direction == .sell {
+            _aggregatedBook[index] = (buy: _aggregatedBook[index]?.buy, sell: AggregatedBookOffersAdd(aggregatedBookOffersUpdate: aggregatedBookOffersUpdate))
         }
-        delegate.aggregatedBook(didReceived: aggregatedBook, contentType: .offersUpdate)
+        delegate.aggregatedBook(didReceived: Array(_aggregatedBook.values), contentType: .offersUpdate)
     }
     
     func aggregatedBookOffersCancel(didReceived aggregatedBookOffersCancel: AggregatedBookOffersCancel) {
         if aggregatedBookOffersCancel.offerCancelType == .allBuySell {
-            aggregatedBook = []
-        } else if let aggregatedBookToCancelIndex = aggregatedBook.firstIndex(where: {
-            $0.asset == aggregatedBookOffersCancel.asset &&
-            $0.position == aggregatedBookOffersCancel.position &&
-            $0.direction == aggregatedBookOffersCancel.direction
-        }) {
-            aggregatedBook.remove(at: aggregatedBookToCancelIndex)
+            _aggregatedBook = [:]
+        } else if let position = aggregatedBookOffersCancel.position, let direction = aggregatedBookOffersCancel.direction {
+            let index = "\(aggregatedBookOffersCancel.asset).\(position)"
+            if direction == .buy {
+                _aggregatedBook[index]?.buy = nil
+            } else if direction == .sell {
+                _aggregatedBook[index]?.sell = nil
+            }
         }
-        delegate.aggregatedBook(didReceived: aggregatedBook, contentType: .offersCancel)
+        delegate.aggregatedBook(didReceived: Array(_aggregatedBook.values), contentType: .offersCancel)
     }
     
     func aggregatedBookEndOfInitialMessages(didReceived aggregatedBookEndOfInitialMessages: AggregatedBookEndOfInitialMessages) {
-        delegate.aggregatedBook(didReceived: aggregatedBook, contentType: .endOfInitialMessages)
+        delegate.aggregatedBook(didReceived: Array(_aggregatedBook.values), contentType: .endOfInitialMessages)
+    }
+    
+    private func sortValidationPosition(at value: (buy: AggregatedBookOffersAdd?, sell: AggregatedBookOffersAdd?)) -> Int? {
+        if value.buy == nil {
+            if value.sell == nil { return nil }
+            else { return value.sell?.position }
+        } else { return value.buy?.position }
+    }
+    
+    private func sortValidation(prev: Int?, next: Int?) -> Bool {
+        guard let prev = prev, let next = next else { return false }
+        return prev < next
     }
 }

@@ -14,6 +14,26 @@ public struct AggregatedBookOffersAdd: ServiceModelProtocol {
     public var offerNumbers: Int
     /// Data e hora da oferta
     public var dateHour: Date
+    
+    init(asset: String, position: Int, direction: OfferDirection, price: Double, amount: Double, offerNumbers: Int, dateHour: Date) {
+        self.asset = asset
+        self.position = position
+        self.direction = direction
+        self.price = price
+        self.amount = amount
+        self.offerNumbers = offerNumbers
+        self.dateHour = dateHour
+    }
+    
+    init(aggregatedBookOffersUpdate: AggregatedBookOffersUpdate) {
+        asset = aggregatedBookOffersUpdate.asset
+        position = aggregatedBookOffersUpdate.position
+        direction = aggregatedBookOffersUpdate.direction
+        price = aggregatedBookOffersUpdate.price
+        amount = aggregatedBookOffersUpdate.amount
+        offerNumbers = aggregatedBookOffersUpdate.offerNumbers
+        dateHour = aggregatedBookOffersUpdate.dateHour
+    }
 }
 
 // MARK: - Group By
