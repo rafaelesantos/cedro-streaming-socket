@@ -37,7 +37,7 @@ final class StreamingSocket: NSObject {
         outputStream.open()
     }
     
-    private func closeNetworkConnection() {
+    func disconnect() {
         inputStream.close()
         outputStream.close()
         isOpen = false
@@ -55,7 +55,7 @@ extension StreamingSocket: StreamDelegate {
         case .hasBytesAvailable:
             autoreleasepool { [weak self] in
                 guard let self = self else { return }
-                let data = readDataFrom(stream: aStream as! InputStream, size: 4096)
+                let data = readDataFrom(stream: aStream as! InputStream, size: 1024 * 1024)
                 if let string = data?.message {
                     self.delegate?.socketReceived(message: string)
                 } else {
@@ -63,7 +63,8 @@ extension StreamingSocket: StreamDelegate {
                 }
             }
         case .endEncountered:
-            print("end of inputStream")
+            isOpen = false
+            print("[INFO] at \(Date())\nDisconnected to server on \(endpoint.host) : \(endpoint.port)")
         case .errorOccurred:
             print("error occured")
         case .hasSpaceAvailable:

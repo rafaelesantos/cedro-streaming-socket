@@ -31,7 +31,7 @@ public final class AggregatedBookStreamingSocket {
         self.delegate = delegate
         self.cedroStreamingSocket = cedroStreamingSocket
         cedroStreamingSocket.aggregatedBookDelegate = self
-        DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 3) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now()) { [weak self] in
             try? self?.newSubscribe(asset: asset)
         }
     }
