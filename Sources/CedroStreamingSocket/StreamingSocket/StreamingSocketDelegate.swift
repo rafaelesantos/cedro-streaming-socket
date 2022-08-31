@@ -1,7 +1,7 @@
 import Foundation
 
 protocol StreamingSocketDelegate: AnyObject {
-    func socketDataReceived(result: Data?)
+    func socketReceived(message: String)
     func receivedNil()
 }
 

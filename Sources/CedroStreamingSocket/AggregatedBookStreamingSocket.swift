@@ -31,7 +31,9 @@ public final class AggregatedBookStreamingSocket {
         self.delegate = delegate
         self.cedroStreamingSocket = cedroStreamingSocket
         cedroStreamingSocket.aggregatedBookDelegate = self
-        try newSubscribe(asset: asset)
+        DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 3) { [weak self] in
+            try? self?.newSubscribe(asset: asset)
+        }
     }
     
     public func newSubscribe(asset: String) throws {

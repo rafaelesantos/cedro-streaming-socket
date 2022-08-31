@@ -53,12 +53,14 @@ extension StreamingSocket: StreamDelegate {
     func stream(_ aStream: Stream, handle eventCode: Stream.Event) {
         switch eventCode {
         case .hasBytesAvailable:
-            let s = self.readStringFrom(stream: aStream as! InputStream)
-            self.closeNetworkConnection()
-            if let s = s {
-                self.delegate?.socketDataReceived(result: Data(s.utf8))
-            }else {
-                self.delegate?.receivedNil()
+            autoreleasepool { [weak self] in
+                guard let self = self else { return }
+                let data = readDataFrom(stream: aStream as! InputStream, size: 4096)
+                if let string = data?.message {
+                    self.delegate?.socketReceived(message: string)
+                } else {
+                    self.delegate?.receivedNil()
+                }
             }
         case .endEncountered:
             print("end of inputStream")
@@ -68,7 +70,7 @@ extension StreamingSocket: StreamDelegate {
             print("has space available")
         case .openCompleted:
             isOpen = true
-            print("open completed")
+            print("[INFO] at \(Date())\nConnected to server on \(endpoint.host) : \(endpoint.port)")
         default:
             print("StreamDelegate event")
         }
@@ -90,33 +92,9 @@ extension StreamingSocket: StreamDelegate {
     
     private func readDataFrom(stream: InputStream, size: Int) -> Data? {
         let buffer = getBufferFrom(stream: stream, size: size)
-        return Data(bytes: buffer, count: size)
-    }
-    
-    private func readStringFrom(stream: InputStream, withSize: Int) -> String? {
-        let d = readDataFrom(stream: stream, size: withSize)!
-        return String(data: d, encoding: .utf8)
-    }
-    
-    private func readStringFrom(stream: InputStream) -> String? {
-        let len: Int = Int(Int32(readIntFrom(stream: inputStream)!))
-        return readStringFrom(stream: stream, withSize: len)
-    }
-    
-    private func readIntFrom(stream: InputStream) -> UInt32? {
-        let buffer = getBufferFrom(stream: stream, size: 4)
-        var int: UInt32 = 0
-        let data = NSData(bytes: buffer, length: 4)
-        data.getBytes(&int, length: 4)
-        int = UInt32(bigEndian: int)
+        let data = Data(bytes: buffer, count: size)
         buffer.deallocate()
-        return int
-    }
-    
-    private func readUInt8From(stream: InputStream) -> UInt8? {
-        let buffer = getBufferFrom(stream: stream, size: 1)
-        buffer.deallocate()
-        return buffer.pointee
+        return data
     }
     
     private func writeToOutputStream(string: String){
