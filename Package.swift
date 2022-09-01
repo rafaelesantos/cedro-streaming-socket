@@ -11,11 +11,12 @@ let package = Package(
             targets: ["CedroStreamingSocket"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/robbiehanson/CocoaAsyncSocket", from: "7.6.4")
     ],
     targets: [
         .target(
             name: "CedroStreamingSocket",
-            dependencies: []),
+            dependencies: ["CocoaAsyncSocket"]),
         .testTarget(
             name: "CedroStreamingSocketTests",
             dependencies: ["CedroStreamingSocket"]),
