@@ -5,7 +5,7 @@ extension AggregatedBook {
         return self.sorted(by: { sortValidation(prev: sortValidationPosition(at: $0), next: sortValidationPosition(at: $1)) })
     }
     
-    private func sortValidationPosition(at value: AggregatedBookOffers) -> Int? {
+    private func sortValidationPosition(at value: AggregatedBookOffer) -> Int? {
         if value.buy == nil {
             if value.sell == nil { return nil }
             else { return value.sell?.position }

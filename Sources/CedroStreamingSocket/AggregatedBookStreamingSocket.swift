@@ -12,7 +12,7 @@ public protocol AggregatedBookStreamingSocketDelegate {
 }
 
 public final class AggregatedBookStreamingSocket {
-    private var _aggregatedBook = [String: AggregatedBookOffers]()
+    private var _aggregatedBook = [String: AggregatedBookOffer]()
     private var cedroStreamingSocket: CedroStreamingSocket
     private var delegate: AggregatedBookStreamingSocketDelegate
     private var currentAsset: String
@@ -50,9 +50,9 @@ extension AggregatedBookStreamingSocket: AggregatedBookDelegate {
     func aggregatedBookOffersAdd(didReceived aggregatedBookOffersAdd: AggregatedBookOffersAdd) {
         let index = "\(aggregatedBookOffersAdd.asset).\(aggregatedBookOffersAdd.position)"
         if aggregatedBookOffersAdd.direction == .buy {
-            _aggregatedBook[index] = (buy: aggregatedBookOffersAdd, sell: _aggregatedBook[index]?.sell)
+            _aggregatedBook[index] = AggregatedBookOffer(buy: aggregatedBookOffersAdd, sell: _aggregatedBook[index]?.sell)
         } else if aggregatedBookOffersAdd.direction == .sell {
-            _aggregatedBook[index] = (buy: _aggregatedBook[index]?.buy, sell: aggregatedBookOffersAdd)
+            _aggregatedBook[index] = AggregatedBookOffer(buy: _aggregatedBook[index]?.buy, sell: aggregatedBookOffersAdd)
         }
         delegate.aggregatedBook(didReceived: Array(_aggregatedBook.values), contentType: .offersAdd)
     }
@@ -60,9 +60,9 @@ extension AggregatedBookStreamingSocket: AggregatedBookDelegate {
     func aggregatedBookOffersUpdate(didReceived aggregatedBookOffersUpdate: AggregatedBookOffersUpdate) {
         let index = "\(aggregatedBookOffersUpdate.asset).\(aggregatedBookOffersUpdate.position)"
         if aggregatedBookOffersUpdate.direction == .buy {
-            _aggregatedBook[index] = (buy: AggregatedBookOffersAdd(aggregatedBookOffersUpdate: aggregatedBookOffersUpdate), sell: _aggregatedBook[index]?.sell)
+            _aggregatedBook[index] = AggregatedBookOffer(buy: AggregatedBookOffersAdd(aggregatedBookOffersUpdate: aggregatedBookOffersUpdate), sell: _aggregatedBook[index]?.sell)
         } else if aggregatedBookOffersUpdate.direction == .sell {
-            _aggregatedBook[index] = (buy: _aggregatedBook[index]?.buy, sell: AggregatedBookOffersAdd(aggregatedBookOffersUpdate: aggregatedBookOffersUpdate))
+            _aggregatedBook[index] = AggregatedBookOffer(buy: _aggregatedBook[index]?.buy, sell: AggregatedBookOffersAdd(aggregatedBookOffersUpdate: aggregatedBookOffersUpdate))
         }
         delegate.aggregatedBook(didReceived: Array(_aggregatedBook.values), contentType: .offersUpdate)
     }
