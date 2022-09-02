@@ -80,7 +80,7 @@ extension CedroStreamingSocket: GCDAsyncSocketDelegate {
                         }
                     }
                 }
-                sock.readData(withTimeout: -1, tag: 0)
+                read(sock, withTag: tag, size: data.count)
             } else { sock.readData(withTimeout: -1, tag: 0) }
         }
     }
