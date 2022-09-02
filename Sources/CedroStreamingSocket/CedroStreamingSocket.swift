@@ -67,20 +67,22 @@ extension CedroStreamingSocket: GCDAsyncSocketDelegate {
     }
     
     public func socket(_ sock: GCDAsyncSocket, didRead data: Data, withTag tag: Int) {
-        guard let allComponents = data.message?.replacingOccurrences(of: "\r", with: "")
-            .components(separatedBy: "\n")
-            .map({ $0.components(separatedBy: ":") }) else { return sock.readData(withTimeout: -1, tag: 0) }
-        
-        for components in allComponents {
-            if components.indices.contains(0), let serviceId = ServiceId(rawValue: components[0]) {
-                switch serviceId {
-                case .bookQuote: try? receivedBookQuote(didReceived: components)
-                case .player: try? receivedPlayer(didReceived: components)
-                case .aggregatedBook: try? receivedAggregatedBook(didReceived: components)
+        autoreleasepool {
+            if let allComponents = data.message?.replacingOccurrences(of: "\r", with: "")
+                .components(separatedBy: "\n")
+                .map({ $0.components(separatedBy: ":") }){
+                for components in allComponents {
+                    if components.indices.contains(0), let serviceId = ServiceId(rawValue: components[0]) {
+                        switch serviceId {
+                        case .bookQuote: try? receivedBookQuote(didReceived: components)
+                        case .player: try? receivedPlayer(didReceived: components)
+                        case .aggregatedBook: try? receivedAggregatedBook(didReceived: components)
+                        }
+                    }
                 }
-            }
+                sock.readData(withTimeout: -1, tag: 0)
+            } else { sock.readData(withTimeout: -1, tag: 0) }
         }
-        read(sock, withTag: tag, size: data.count)
     }
     
     private func read(_ sock: GCDAsyncSocket, withTag tag: Int, size: Int) {
