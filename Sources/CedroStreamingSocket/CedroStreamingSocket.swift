@@ -1,4 +1,5 @@
 import CocoaAsyncSocket
+import Foundation
 
 protocol ServiceProtocol {
     static var serviceId: ServiceId { get }
@@ -10,6 +11,7 @@ public final class CedroStreamingSocket: NSObject {
     private var endpoint: SocketEndpointProtocol
     private var isOpenConnection: Bool { return socket != nil && socket?.isConnected == true }
     private let semaphore = DispatchSemaphore(value: 1)
+    private var socketDataQueue = Queue<Data>()
     
     private let delegateQueue = DispatchQueue(
         label: "cedro.streaming.socket.delegate",
@@ -20,6 +22,12 @@ public final class CedroStreamingSocket: NSObject {
     private let socketQueue = DispatchQueue(
         label: "cedro.streaming.socket.socket",
         qos: .userInitiated,
+        attributes: .concurrent
+    )
+    
+    private let decodeQueue = DispatchQueue(
+        label: "cedro.streaming.socket.decode",
+        qos: .utility,
         attributes: .concurrent
     )
     
@@ -68,27 +76,31 @@ extension CedroStreamingSocket: GCDAsyncSocketDelegate {
     }
     
     public func socket(_ sock: GCDAsyncSocket, didRead data: Data, withTag tag: Int) {
-        autoreleasepool {
-            semaphore.wait()
+        socketDataQueue.enqueue(data)
+        decodeQueue.async { [weak self] in
+            guard let self = self else { return }
+            self.semaphore.wait()
             if let allComponents = data.message?.replacingOccurrences(of: "\r", with: "")
                 .components(separatedBy: "\n")
                 .map({ $0.components(separatedBy: ":") }){
                 for components in allComponents {
                     if components.indices.contains(0), let serviceId = ServiceId(rawValue: components[0]) {
                         switch serviceId {
-                        case .bookQuote: try? receivedBookQuote(didReceived: components)
-                        case .player: try? receivedPlayer(didReceived: components)
-                        case .aggregatedBook: try? receivedAggregatedBook(didReceived: components)
+                        case .bookQuote: try? self.receivedBookQuote(didReceived: components)
+                        case .player: try? self.receivedPlayer(didReceived: components)
+                        case .aggregatedBook: try? self.receivedAggregatedBook(didReceived: components)
                         }
                     }
                 }
-                semaphore.signal()
-                sock.readData(withTimeout: -1, tag: 0)
-            } else {
-                semaphore.signal()
-                sock.readData(withTimeout: -1, tag: 0)
-            }
+                self.readNext(sock, tag: tag)
+            } else { self.readNext(sock, tag: tag) }
         }
+    }
+    
+    private func readNext(_ sock: GCDAsyncSocket, tag: Int) {
+        socketDataQueue.dequeue()
+        semaphore.signal()
+        sock.readData(withTimeout: -1, tag: tag)
     }
 }
 
