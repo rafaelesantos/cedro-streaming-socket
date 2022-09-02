@@ -9,6 +9,7 @@ public final class CedroStreamingSocket: NSObject {
     private var authentication: SocketAuthenticationProtocol
     private var endpoint: SocketEndpointProtocol
     private var isOpenConnection: Bool { return socket != nil && socket?.isConnected == true }
+    private let semaphore = DispatchSemaphore(value: 1)
     
     private let delegateQueue = DispatchQueue(
         label: "cedro.streaming.socket.delegate",
@@ -68,6 +69,7 @@ extension CedroStreamingSocket: GCDAsyncSocketDelegate {
     
     public func socket(_ sock: GCDAsyncSocket, didRead data: Data, withTag tag: Int) {
         autoreleasepool {
+            semaphore.wait()
             if let allComponents = data.message?.replacingOccurrences(of: "\r", with: "")
                 .components(separatedBy: "\n")
                 .map({ $0.components(separatedBy: ":") }){
@@ -80,16 +82,12 @@ extension CedroStreamingSocket: GCDAsyncSocketDelegate {
                         }
                     }
                 }
-                read(sock, withTag: tag, size: data.count)
-            } else { sock.readData(withTimeout: -1, tag: 0) }
-        }
-    }
-    
-    private func read(_ sock: GCDAsyncSocket, withTag tag: Int, size: Int) {
-        if ServiceCommand.aggregatedBook(asset: "").tag == tag || ServiceCommand.bookQuote(asset: "").tag == tag || ServiceCommand.player(market: .bmf).tag == tag {
-            sock.readData(toLength: UInt(size), withTimeout: -1, tag: tag)
-        } else {
-            sock.readData(withTimeout: -1, tag: tag)
+                semaphore.signal()
+                sock.readData(withTimeout: -1, tag: 0)
+            } else {
+                semaphore.signal()
+                sock.readData(withTimeout: -1, tag: 0)
+            }
         }
     }
 }

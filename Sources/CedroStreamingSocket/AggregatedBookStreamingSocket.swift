@@ -21,7 +21,7 @@ public final class AggregatedBookStreamingSocket {
     private weak var delegate: AggregatedBookStreamingSocketDelegate?
     
     public var aggregatedBook: AggregatedBook {
-        return Array(_aggregatedBook.values).sortedByPosition
+        return Array(_aggregatedBook.values)
     }
     
     public init(
