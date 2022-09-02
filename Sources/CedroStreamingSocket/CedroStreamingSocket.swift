@@ -11,6 +11,7 @@ public final class CedroStreamingSocket: NSObject {
     private var endpoint: SocketEndpointProtocol
     private var isOpenConnection: Bool { return socket != nil && socket?.isConnected == true }
     private let semaphore = DispatchSemaphore(value: 1)
+    private let socketSemaphore = DispatchSemaphore(value: 5)
     private var socketDispatchGroup = DispatchGroup()
     
     private let delegateQueue = DispatchQueue(
@@ -79,6 +80,7 @@ extension CedroStreamingSocket: GCDAsyncSocketDelegate {
         socketDispatchGroup.enter()
         decodeQueue.async { [weak self] in
             guard let self = self else { return }
+            self.socketSemaphore.wait()
             self.semaphore.wait()
             if let message = data.message {
                 try? self.decodeSocketMessage(message)
@@ -103,6 +105,7 @@ extension CedroStreamingSocket: GCDAsyncSocketDelegate {
     }
     
     private func readNext(_ sock: GCDAsyncSocket, tag: Int) {
+        socketSemaphore.signal()
         semaphore.signal()
         socketDispatchGroup.leave()
         sock.readData(withTimeout: -1, tag: tag)
