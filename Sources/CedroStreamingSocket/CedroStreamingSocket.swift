@@ -59,7 +59,7 @@ public final class CedroStreamingSocket: NSObject {
 // MARK: - GCDAsyncSocketDelegate
 extension CedroStreamingSocket: GCDAsyncSocketDelegate {
     public func socket(_ sock: GCDAsyncSocket, didConnectToHost host: String, port: UInt16) {
-        read(sock, withTag: 0)
+        sock.readData(withTimeout: -1, tag: 0)
     }
     
     public func socketDidDisconnect(_ sock: GCDAsyncSocket, withError err: Error?) {
@@ -80,11 +80,15 @@ extension CedroStreamingSocket: GCDAsyncSocketDelegate {
                 }
             }
         }
-        read(sock, withTag: tag)
+        read(sock, withTag: tag, size: data.count)
     }
     
-    private func read(_ sock: GCDAsyncSocket, withTag tag: Int) {
-        sock.readData(toLength: 1024 * 1024, withTimeout: -1, tag: tag)
+    private func read(_ sock: GCDAsyncSocket, withTag tag: Int, size: Int) {
+        if ServiceCommand.aggregatedBook(asset: "").tag == tag || ServiceCommand.bookQuote(asset: "").tag == tag || ServiceCommand.player(market: .bmf).tag == tag {
+            sock.readData(toLength: UInt(size), withTimeout: -1, tag: tag)
+        } else {
+            sock.readData(withTimeout: -1, tag: tag)
+        }
     }
 }
 
